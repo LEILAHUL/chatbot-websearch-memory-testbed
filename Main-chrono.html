@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Interaction des Questions</title>
+    <style>
+        #reponse {
+            width: 100%;
+            height: 100px;
+            margin-top: 30px;
+            font-size: 20px;
+        }
+        #chronometre {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 10px;
+            border: 3px solid black;
+            border-radius: 5px;
+            /*background-color: black;*/
+        }
+        .bouton {
+            margin-top: 20px;
+            /*margin-left: 68px;*/
+            padding: 10px 20px;
+            font-size: 1em;
+            color: #fff;
+            background-color: #007BFF;
+            border: none;
+            cursor: pointer;
+        }
+        .bouton:disabled {
+            background-color: #ccc; /* change la couleur de fond lorsque le bouton est désactivé */
+            cursor: not-allowed; /* change le curseur lorsque le bouton est désactivé */
+        }
+        #compteur {
+            text-align: left; 
+        }
+        #envoyer {
+            display: block; 
+            text-align: center; /* alinea el botón a la derecha */
+        }
+        #evaluerConnaissance{
+            margin-top: 20px;
+        }
+        .echelle input[type="radio"]:checked + label {
+            background-color: #007BFF;
+        }
+        #echelle4{
+            margin-top: 10px;
+        }
+        body {
+            font-size: 20px;
+        }
+
+    </style>
+</head>
+<body>
+    <h3>   </h3>
+    <div id="question"></div>
+    <textarea id="reponse" placeholder="Écrivez votre réponse ici" oninput="compterMots()" maxlength="100000"></textarea>
+    <div id="compteur"></div>
+    <p id="texteInfosVerifiées" style="display: none;">Vous devez vérifier les informations fournies par l’agent conversationnel avant de fournir une réponse. Veuillez choisir.</p>
+
+    <label style="display: none;" id="labelInfosVerifiées">
+        <input type="radio" name="informationsVerifiees" value="oui" id="infosVerifiées" oninput="compterMots()"> Oui, j'ai vérifié les informations.
+    </label>
+
+
+    <button class="bouton" id="envoyer">Envoyer</button>
+    <div id="texteEchelle" style="display: none;">Veuillez évaluer votre réponse :</div>
+    <div class = "echelle" id="echelle1" style="display: none;"></div>
+    <button class="bouton" id="evaluer1" style="display: none;">Continuer</button>
+    <div class = "echelle" id="echelle2" style="display: none;"></div>
+    <button class="bouton" id="evaluer2" style="display: none;">Continuer</button>
+    <div class = "echelle" id="echelle3" style="display: none;"></div>
+    <button class="bouton" id="evaluer3" style="display: none;">Continuer</button>
+    <div id="chronometre">00:00</div>
+    
+    <div class = "echelle" id="echelle4" style="display: none;"></div>
+    <button class="bouton" id="evaluer4" style="display: none;">Continuer</button>
+    <script src="questions.js"></script>
+    <script>
+        localStorage.setItem("currentQuestionnaire", 0);
+        const condition  = localStorage.getItem("condition");
+        let averti = 0;
+        const nombreDeQuestions = questions.length;
+        let indiceAleatoire;
+        let ordreReponse = 1;
+        let alerted = false;
+
+        if (condition == 3){
+            document.getElementById("texteInfosVerifiées").style.display = "block";
+            document.getElementById("labelInfosVerifiées").style.display = "inline";
+        }
+
+        
+        let reponses = []; // Pour enregistrer les réponses
+        // let minEchelle = 1; // Minimum de l'échelle
+        // let maxEchelle = 5; // Maximum de l'échelle
+        let maxMots = 100; // Maximum de mots
+        const experience = JSON.parse(localStorage.getItem('experience'));
+        console.log(questions.length)
+
+        function verifierSelection() {
+        const radiosInfosverifies = document.querySelectorAll('input[name="informationsVerifiees"]');
+        let selection = null;
+
+        radiosInfosverifies.forEach(radiosInfosverifies => {
+            if (radiosInfosverifies.checked) {
+            selection = radiosInfosverifies.value;
+            }
+        });
+        return selection;
+        }
+
+        
+
+        function creerEchelle(idEchelle, maxEchelle,minEchelle) {
+                let divEchelle = document.getElementById(idEchelle);
+
+
+
+                for (let i = minEchelle; i <= maxEchelle; i++) {
+                    let optionDiv = document.createElement('div');
+                    optionDiv.style.display = 'inline-block'; 
+                    optionDiv.style.textAlign = 'center'; 
+                    optionDiv.style.margin = '0 10px';
+                    let radio = document.createElement("input");
+                    radio.type = "radio";
+                    radio.name = idEchelle;
+                    radio.value = i;
+                    radio.addEventListener("click", function() {
+                        if(idEchelle == "echelle1"){idBouton = "evaluer1"}else if (idEchelle == "echelle2"){idBouton = "evaluer2"}else if (idEchelle == "echelle3") {idBouton = "evaluer3"}else {idBouton = "evaluer4"};
+                        verifierEchelle(idEchelle, idBouton);
+                    });
+                    optionDiv.appendChild(radio);
+                    optionDiv.appendChild(document.createElement('br'));
+                    optionDiv.appendChild(document.createTextNode(i));
+                    divEchelle.appendChild(optionDiv);
+                }
+
+                let optionDiv = document.createElement('div');
+                optionDiv.style.display = 'inline-block'; 
+                optionDiv.style.textAlign = 'center'; 
+                optionDiv.style.margin = '0 10px';
+                let radioNoAplica = document.createElement("input");
+                radioNoAplica.type = "radio";
+                radioNoAplica.name = idEchelle;
+                radioNoAplica.value = "N/A"; 
+                radioNoAplica.addEventListener("click", function() {
+                    if(idEchelle == "echelle1"){idBouton = "evaluer1"}else if (idEchelle == "echelle2"){idBouton = "evaluer2"}else if (idEchelle == "echelle3") {idBouton = "evaluer3"}else {idBouton = "evaluer4"};
+                        verifierEchelle(idEchelle, idBouton);
+                });
+                optionDiv.appendChild(radioNoAplica);
+                optionDiv.appendChild(document.createElement('br'));
+                optionDiv.appendChild(document.createTextNode("Ne s'applique pas"));
+                divEchelle.appendChild(optionDiv);
+            }
+
+
+        function reinitialiserEchelle(idEchelle,idBouton) {
+            let inputsEchelle = document.querySelectorAll('input[name="' + idEchelle + '"]');
+            for (let i = 0; i < inputsEchelle.length; i++) {
+                inputsEchelle[i].checked = false;
+            }
+            let bouton = document.getElementById(idBouton);
+            bouton.disabled = true;
+            bouton.style.backgroundColor = "#ccc";
+
+        }
+
+        function obtenirQuestionAleatoire() {
+            indiceAleatoire = Math.floor(Math.random() * questions.length);
+            let question = questions[indiceAleatoire].question;
+            reponses.push(questions[indiceAleatoire]); // "text": questions[indiceAleatoire].question, "indice": questions[indiceAleatoire].indice});
+            questions.splice(indiceAleatoire, 1); // Supprime la question du tableau pour éviter la répétition
+            return question;
+        }
+
+        document.addEventListener('keydown', function(event) {
+            if (event.ctrlKey && event.shiftKey && event.key === "U") {
+                let x = 15; 
+                questions.splice(x); 
+                console.log(questions.length);
+            }
+            
+        });
+
+        function afficherQuestion() {
+            if (questions.length > (nombreDeQuestions-12)) {
+                //let question = questions.shift(); 
+                averti = 0;
+                let question = obtenirQuestionAleatoire();
+                document.getElementById("question").innerText = question;
+                document.getElementById("texteEchelle").style.display = "none"; // Cache le texte de l'échelle
+                document.getElementById("echelle1").style.display = "none"; // Cache l'échelle 1
+                document.getElementById("echelle2").style.display = "none"; // Cache l'échelle 2
+                document.getElementById("echelle3").style.display = "none"; // Cache l'échelle 2
+                document.getElementById("echelle4").style.display = "none"; // Cache l'échelle 2
+                document.getElementById("reponse").style.display = "block"; // Affiche la réponse
+                document.getElementById("envoyer").style.display = "block"; // Affiche le bouton d'envoi
+                document.getElementById("evaluer1").style.display = "none"; // Cache le bouton d'évaluation 1
+                document.getElementById("evaluer2").style.display = "none"; // Cache le bouton d'évaluation 2
+                document.getElementById("evaluer3").style.display = "none"; // Cache le bouton d'évaluation 2
+                document.getElementById("evaluer4").style.display = "none"; // Cache le bouton d'évaluation 2
+                document.getElementById("compteur").style.display = "block"; // Affiche le compteur de mots
+                document.getElementById("reponse").value = ""; // Nettoie la réponse
+                document.getElementById("chronometre").style.display = "block"; // Affiche le chronometre
+                if (condition == 3){
+                    document.getElementById("labelInfosVerifiées").style.display = "inline";
+                    // document.getElementById("labelInfosNonVerifiees").style.display = "inline";
+                    document.getElementById("texteInfosVerifiées").style.display = "block";
+                }
+                compterMots(); // Met à jour le compteur de mots
+                debut = Date.now(); // Enregistre le début du temps
+                intervalId = setInterval(majChronometre, 1000); // Commence le chronomètre
+            } else {
+                // Toutes les questions ont été répondues
+                console.log(reponses); // Ici, vous pouvez faire ce que vous voulez avec les réponses
+                clearInterval(intervalId); // Arrête le chronomètre
+                //window.location.href = 'PresentationTestMemoireSurprise.html';
+                const numparticipantURL = localStorage.getItem("numParticipant");
+                window.location.href = 'InstructionsQuestionnaires.html?numParticipant='+ encodeURIComponent(numparticipantURL);
+            }
+        }
+
+        function repondre() {
+            let reponse = document.getElementById("reponse").value;
+            // reponses.push({question:{ "text": document.getElementById("question").innerText, "indice": questions[indiceAleatoire].indice,"response": reponse}});
+            reponses[reponses.length - 1].ordreReponses = ordreReponse;
+            reponses[reponses.length - 1].response = reponse;
+            reponses[reponses.length - 1].tempsReponse = Date.now()-debut;
+            /*if (condition == 3){
+            reponses[reponses.length - 1].informationsVerifiees = verifierSelection();
+            }*/
+            document.getElementById("reponse").style.display = "none"; // Cache la réponse
+            document.getElementById("texteEchelle").style.display = "block"; // Affiche le texte de l'échelle
+            document.getElementById("echelle1").style.display = "block"; // Affiche l'échelle 1
+            document.getElementById("envoyer").style.display = "none"; // Cache le bouton d'envoi
+            document.getElementById("evaluer1").style.display = "block"; // Affiche le bouton d'évaluation 1
+            document.getElementById("labelInfosVerifiées").style.display = "none";
+            // document.getElementById("labelInfosNonVerifiees").style.display = "none";
+            document.getElementById("texteInfosVerifiées").style.display = "none";
+            const radiosInfosVerifiees = document.querySelectorAll('input[name="informationsVerifiees"]');
+                radiosInfosVerifiees.forEach(radiosInfosVerifiees => {
+                    radiosInfosVerifiees.checked = false;
+                });
+            document.getElementById("question").innerText = "Veuillez indiquer de 1 à 5. 1 = fortement en désaccord et 5 = fortement en accord";
+            if(experience == 1){
+                document.getElementById("texteEchelle").innerText = "J'ai confiance en la réponse que j'ai offerte à la question présentée.";
+            }else if (experience == 2){
+				document.getElementById("question").innerText = "Veuillez indiquer de 1 à 5. 1 = très peu d'effort et 5 = beaucoup d'effort";
+                document.getElementById("texteEchelle").innerText = "Quel niveau d'effort cette question vous a-t-elle demandé?";
+            }
+            document.getElementById("compteur").style.display = "none"; // Cache le compteur de mots
+            reinitialiserEchelle("echelle1","evaluer1"); // Réinitialise l'échelle 1
+            document.getElementById("chronometre").style.display = "none"; // Cache le chronometre
+            clearInterval(intervalId); // Arrête le chronomètre
+            ordreReponse++;
+        }
+
+        function verifierEchelle(idEchelle, idBouton) {
+            let echelleElement = document.querySelector('input[name="' + idEchelle + '"]:checked');
+            let bouton = document.getElementById(idBouton);
+            if (echelleElement) {
+                bouton.disabled = false;
+                bouton.style.backgroundColor = "#007BFF"; // couleur de fond normale
+            } else {
+                bouton.disabled = true;
+                bouton.style.backgroundColor = "#ccc"; // couleur de fond lorsque le bouton est désactivé
+            }
+        }
+
+        function evaluer1() {
+            let echelle = document.querySelector('input[name="echelle1"]:checked').value;
+            reponses[reponses.length - 1].echelle1 = {"text": document.getElementById("texteEchelle").innerText};
+            reponses[reponses.length - 1].echelle1.valeur = echelle; // Enregistre l'échelle 1 de la dernière réponse
+            document.getElementById("echelle1").style.display = "none"; // Cache l'échelle 1
+            document.getElementById("echelle2").style.display = "block"; // Affiche l'échelle 2
+            document.getElementById("evaluer1").style.display = "none"; // Cache le bouton d'évaluation 1
+            if (experience == 1){
+            document.getElementById("texteEchelle").innerText = "J’ai utilisé des informations issues de sources numériques pour répondre à la question présentée.";
+        }else if (experience == 2){
+				document.getElementById("question").innerText = "Veuillez indiquer de 1 à 5. 1 = très peu d'effort et 5 = beaucoup d'effort";
+                document.getElementById("texteEchelle").innerText = "Pour cette question, quel niveau d'effort avez-vous choisi de déployer?";
+            }
+            document.getElementById("evaluer2").style.display = "block"; // Affiche le bouton d'évaluation 2
+            reinitialiserEchelle("echelle2","evaluer2"); // Réinitialise l'échelle 2
+            debut = Date.now(); // Enregistre le début du temps
+            //intervalId = setInterval(majChronometre, 1000); // Commence le chronomètre
+        }
+
+        function evaluer2() {
+            let echelle = document.querySelector('input[name="echelle1"]:checked').value;
+            reponses[reponses.length - 1].echelle2 = {"text": document.getElementById("texteEchelle").innerText};
+            reponses[reponses.length - 1].echelle2.valeur = echelle; // Enregistre l'échelle 1 de la dernière réponse
+            document.getElementById("echelle2").style.display = "none"; // Cache l'échelle 1
+            document.getElementById("evaluer2").style.display = "none"; // Cache le bouton d'évaluation 1
+            if(experience == 1){
+            document.getElementById("echelle3").style.display = "block"; // Affiche l'échelle 2
+            document.getElementById("texteEchelle").innerText = "J’ai confiance en la source numérique que j’ai utilisée pour répondre à la question.";
+            document.getElementById("evaluer3").style.display = "block"; // Affiche le bouton d'évaluation 2
+            reinitialiserEchelle("echelle3","evaluer3"); // Réinitialise l'échelle 2
+            //debut = Date.now(); // Enregistre le début du temps
+            //intervalId = setInterval(majChronometre, 1000); // Commence le chronomètre
+        } else {
+            document.getElementById("question").innerText = "";
+            document.getElementById("texteEchelle").innerText = "Sur une échelle de 0 à 10, j’estime ma connaissance initiale par rapport au sujet de la question au niveau suivant. 0=Aucune connaîssance. 10=Connaîssance experte";
+            document.getElementById("echelle4").style.display = "block"; // Affiche l'échelle 2
+            document.getElementById("evaluer4").style.display = "block";
+            reinitialiserEchelle("echelle4","evaluer4");
+        }
+        }
+
+        function evaluer3() {
+            let echelle = document.querySelector('input[name="echelle3"]:checked').value;
+            verifierEchelle("echelle3", "evaluer3");
+            reponses[reponses.length - 1].echelle3 = {"text": document.getElementById("texteEchelle").innerText};
+            reponses[reponses.length - 1].echelle3.valeur = echelle; // Enregistre l'échelle 2 de la dernière réponse
+            // afficherQuestion();
+            document.getElementById("echelle3").style.display = "none"; // Cache l'échelle 1
+            document.getElementById("evaluer3").style.display = "none";
+            document.getElementById("question").innerText = "";
+            /*document.getElementById("texteEchelle").innerText = "Sur une échelle de 0 à 100, j’estime ma connaissance initiale par rapport au sujet de la question au niveau suivant.";*/
+            document.getElementById("texteEchelle").innerText = "Sur une échelle de 0 à 10, j’estime ma connaissance initiale par rapport au sujet de la question au niveau suivant.";
+            document.getElementById("echelle4").style.display = "block"; // Affiche l'échelle 2
+            document.getElementById("evaluer4").style.display = "block";
+            reinitialiserEchelle("echelle4","evaluer4");
+            //document.getElementById("connaissance").style.display = "block"; // Affiche la question de connaissance
+            //document.getElementById("evaluerConnaissance").style.display = "block"; // Affiche le bouton d'évaluation de connaissance
+        }
+
+        function evaluer4(){
+            let echelle = document.querySelector('input[name="echelle4"]:checked').value;
+            verifierEchelle("echelle4", "evaluer4");
+            reponses[reponses.length - 1].echelle4 = {"text": document.getElementById("texteEchelle").innerText};
+            reponses[reponses.length - 1].echelle4.valeur = echelle;
+            localStorage.setItem("reponses", JSON.stringify(reponses));
+            console.log(typeof reponses);
+            afficherQuestion();
+        }
+
+        function evaluerConnaissance(){
+            let nivConfiance = document.getElementById('niveauConnaissance').value;
+            reponses[reponses.length - 1].confiance = nivConfiance;
+            document.getElementById("niveauConnaissance").value = "";
+            afficherQuestion();
+        }
+
+        function compterMots() {
+            let reponse = document.getElementById("reponse").value;
+            let mots = reponse.split(/\s+/).filter(function(mot) {
+                return mot.length > 0;
+            }).length;
+            document.getElementById("compteur").innerText = "Mots : " + mots + "/" + maxMots;
+            if (mots > maxMots) {
+                document.getElementById("envoyer").disabled = true;
+            } else if (mots == 0) {
+                document.getElementById("envoyer").disabled = true;
+            } else {
+                if (condition == 3){
+                    let selection = verifierSelection();
+                    if (selection){
+                        document.getElementById("envoyer").disabled = false;
+                    } else {
+                        document.getElementById("envoyer").disabled = true;
+                    }
+                } else {
+                    document.getElementById("envoyer").disabled = false;
+                }
+                // document.getElementById("envoyer").disabled = false;
+            }
+        }
+
+        function majChronometre() {
+            let secondes = Math.floor((Date.now() - debut) / 1000);
+            let minutes = Math.floor(secondes / 60);
+            secondes %= 60;
+            console.log(averti);
+            document.getElementById("chronometre").innerText = (minutes < 10 ? "0" : "") + minutes + ":" + (secondes < 10 ? "0" : "") + secondes;
+
+            // Change la couleur du chronomètre en fonction du temps écoulé
+            if (minutes < 3) {
+                document.getElementById("chronometre").style.backgroundColor = "green";
+            } else if (minutes < 5) {
+                document.getElementById("chronometre").style.backgroundColor = "yellow";
+            } else if (minutes < 7) {
+                document.getElementById("chronometre").style.backgroundColor = "orange";
+            } else if (minutes < 10) {
+                document.getElementById("chronometre").style.backgroundColor = "red";
+            /*} else if ((minutes == 9 && secondes >= 58) || (minutes == 10 && secondes <= 3)){
+                document.getElementById("envoyer").disabled = true;*/
+            } else{                
+                /*if(averti == 0){
+                    // alert("Il s'est écoulé plus de dix minutes. Veuillez cliquer sur 'OK' pour continuer.");
+                    averti = 1;
+                }   */
+                    repondre();
+            }
+                    
+        }
+        verifierEchelle("echelle1", "evaluer1");
+        verifierEchelle("echelle2", "evaluer2");
+        verifierEchelle("echelle3", "evaluer3");
+        document.getElementById("envoyer").addEventListener("click", repondre);
+        document.getElementById("evaluer1").addEventListener("click", evaluer1);
+        document.getElementById("evaluer2").addEventListener("click", evaluer2);
+        document.getElementById("evaluer3").addEventListener("click", evaluer3);
+        document.getElementById("evaluer4").addEventListener("click", evaluer4);
+        //document.getElementById("evaluerConnaissance").addEventListener("click",evaluerConnaissance);
+        creerEchelle("echelle1",5,1);
+        creerEchelle("echelle2",5,1);
+        creerEchelle("echelle3",5,1);
+        creerEchelle("echelle4",10,0);
+        afficherQuestion();
+    </script>
+</body>
+</html>

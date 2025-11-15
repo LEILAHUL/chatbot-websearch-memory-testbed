@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Remerciements</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            padding: 0;
+            background-color: #f0f0f0;
+            font-size: 20px;
+            text-align: center;
+        }
+
+        .container {
+             display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+        }
+            /*overflow-y: auto; /* Permite el desplazamiento vertical */
+            /*padding: 20px; /* Añade un poco de espacio alrededor del contenido */
+        /*}*/
+
+        .welcome-text {
+            font-size: 2em;
+            color: #333;
+            
+        }
+
+        .instructions {
+            margin-top: 20px;
+            text-align: justify;
+        }
+
+        .welcome-button {
+            margin-top: 20px;
+            margin-bottom: 40px;
+            padding: 10px 20px;
+            font-size: 1em;
+            color: #fff;
+            background-color: #007BFF;
+            border: none;
+            cursor: pointer;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="welcome-text"><p>Merci de votre participation. <br> Veuillez informer l'équipe de recherche que vous avez terminé.</div>
+        <div class="instructions">
+            <p></p>
+        </div>
+        <button class="welcome-button" id ="buttonFin" onclick="redirectToOtherPage()">Bouton pour l'équipe de recherche</button>
+    </div>
+
+    <script>
+        let experience = localStorage.getItem("experience");
+		let condition = localStorage.getItem("condition");
+        function redirectToOtherPage() {
+            // Remplacez 'autrePage.html' par le nom de votre page locale
+            // window.location.href = 'Main-chrono.html';
+        }
+        function saveParticipantData() {
+    let numParticipant = localStorage.getItem("numParticipant");
+    
+    let session = localStorage.getItem("session");
+    
+    let sexe = localStorage.getItem("sexe");
+    let genre = localStorage.getItem("genre");
+    let age = localStorage.getItem("age");
+    let niveauScolarite = localStorage.getItem("niveauScolarite");
+    let niveauFrancais = localStorage.getItem("niveauFrancais");
+
+    let participantData = {
+        numParticipant: numParticipant,
+        condition: condition,
+        session: session,
+        experience: experience,
+        sexe: sexe,
+        genre: genre,
+        age: age,
+        niveauScolarite: niveauScolarite,
+        niveauFrancais: niveauFrancais
+    };
+
+    // Crear un archivo JSON local
+    let fileName = "participant" + numParticipant + "_experience" + experience + "_condition" + condition + "_donnesParticipants.json";
+    downloadJSON(participantData, fileName);
+}
+
+function saveReponsesData() {
+    let numParticipant = localStorage.getItem("numParticipant");
+
+    // Recuperar reponsesQuestionnaires
+    let reponsesQuestionnaires = JSON.parse(localStorage.getItem("reponsesQuestionnaires"));
+    let fileNameQuestionnaires = "participant" + numParticipant + "_experience" + experience + "_condition" + condition + "_questionnaires.json";
+    downloadJSON(reponsesQuestionnaires, fileNameQuestionnaires);
+
+    // Recuperar reponses
+    let reponses = JSON.parse(localStorage.getItem("reponses"));
+    let fileNameReponses = "participant" + numParticipant + "_experience" + experience + "_condition" + condition + "_reponses.json";
+    downloadJSON(reponses, fileNameReponses);
+}
+
+function downloadJSON(data, fileName) {
+    let json = JSON.stringify(data, null, 2); // Formatear JSON
+    let blob = new Blob([json], { type: "application/json" });
+    let url = URL.createObjectURL(blob);
+    let a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+   // document.body.removeChild(a);
+   // URL.revokeObjectURL(url);
+}
+
+// Guardar los datos del participante y las respuestas al finalizar
+
+
+
+        document.addEventListener('keydown', function(event) {
+            if ((event.ctrlKey && event.shiftKey && event.key === "F") || (event.ctrlKey && event.key === 'Enter')) {
+
+                saveParticipantData();
+                saveReponsesData();
+
+                
+            }
+            
+        });
+
+        document.getElementById('buttonFin').addEventListener('click', function() {
+            saveParticipantData();
+                saveReponsesData();
+            });
+
+    </script>
+</body>
+</html>

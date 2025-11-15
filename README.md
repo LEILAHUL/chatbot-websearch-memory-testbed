@@ -1,4 +1,19 @@
 # chatbot-websearch-memory-testbed
 Experimental interface that presents essay questions, guides participants through chatbot or web-based answering, and administers workload questionnaires and a surprise short-term memory test.
 
+# Authors
+
+Code and experimental interface developed by:
+
+- Jonay Ramon Alaman, Université Laval  
+- Alexandre Marois, Université Laval  
+
+Contact: LEILAH@ulaval.ca
+
+# Related publication
+
+This repository accompanies the manuscript: tbc
+
+# Overview
+
 This repository provides an experimental interface to investigate how chatbot-based assistance and traditional web search affect mental effort and short-term learning. Participants are required to answer essay questions either by using web search or by interacting with a chatbot. After each essay, they respond to a prior knowledge question about the topic. At the end of the task, participants complete a tool literacy questionnaire and the NASA-TLX, followed by an unexpected recall test on the essay content. The interface presents questions, guides participants through all steps of the procedure, logs search and interaction behaviors, and delivers both memory and workload measures in a controlled, browser-based environment. The testbed is intended for researchers interested in self-regulated learning, cognitive load, and human interaction with AI tools.
